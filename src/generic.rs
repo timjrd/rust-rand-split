@@ -74,7 +74,7 @@ impl<S, SeedS, R> SeedableRng<SeedS> for Split<S, R>
 }
 
 
-impl<S, R> SplitRng for Split<S, R> 
+impl<S, R: 'static> SplitRng for Split<S, R>
     where S: SplitRng,
           R: Rng + Rand
 {

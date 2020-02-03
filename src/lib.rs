@@ -203,6 +203,7 @@ pub mod twolcg;
 
 use rand::{Rng, Rand};
 use chaskeyrng::{ChaskeyRng, ChaskeyPrf};
+#[allow(deprecated)]
 use std::hash::{Hash, Hasher, SipHasher};
 
 
@@ -214,7 +215,7 @@ pub type Prf<Rng> = generic::Prf<ChaskeyPrf, Rng>;
 
 
 /// A trait for **splittable** pseudo random generators.  
-pub trait SplitRng : Rng + Sized {
+pub trait SplitRng : Rng + Sized + 'static {
     
     /// The type of pseudo-random functions ("PRFs") produced off a
     /// `SplitRng` instance.  A PRF is a factory of `SplitRng`s, whose
@@ -280,16 +281,17 @@ impl<A: Rand> SplitRand for Seq<A> {
 }
 
 
-impl<A: Hash, B: Rand> SplitRand for Box<Fn(A) -> B> {
+impl<A: Hash, B: Rand> SplitRand for Box<dyn Fn(A) -> B> {
     
     fn split_rand<R>(rng: &mut R) -> Self 
-        where R: SplitRng, R: 'static
+        where R: SplitRng
     {
         let (k0, k1) = (rng.next_u64(), rng.next_u64());
         let prf = rng.splitn();
         Box::new(move |arg: A| {
             let i: u32 = {
                 // TODO: is there a way not to hardcode `SipHasher` here?
+                #[allow(deprecated)]
                 let mut hasher = SipHasher::new_with_keys(k0, k1);
                 arg.hash(&mut hasher);
                 (hasher.finish() & 0xffff_ffff) as u32
